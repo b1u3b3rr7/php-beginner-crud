@@ -35,12 +35,23 @@
         // include database connection
         include 'config/database.php';
 
+        // pagination variables
+        $page = isset($_GET['page']) ? $_GET['page'] : 1;
+
+        $records_per_page = 5;
+
+        $from_record_num = ($records_per_page * $page) - $records_per_page;
+
         // delete message prompt will be here
 
         // select all data from database
-        $query = "SELECT `id`, `name`, `description`, `price` FROM `product` ORDER BY id DESC";
+        $query = "SELECT `id`, `name`, `description`, `price` FROM `product` ORDER BY id DESC LIMIT :from_record_num, :records_per_page";
         $stmt = $conn->prepare($query);
+
+        $stmt->bindParam(":from_record_num", $from_record_num, PDO::PARAM_INT);
+        $stmt->bindParam(":records_per_page", $records_per_page, PDO::PARAM_INT);
         $stmt->execute();
+
         // get number of data
         $num = $stmt->rowCount();
 
@@ -75,13 +86,27 @@
         } else {
             echo "<div class='alert alert-danger'>No records found.</div>";
         }
-        ?>
-        <?
-            $action = isset($_GET['action']) ? $_GET['action'] : "";
 
-            if($action == 'deleted') {
-                echo "<div class='alert alert-success'>Record was deleted.</div>";
-            }
+        // pagination
+        $query = "SELECT COUNT(*) as `total_rows` FROM `product`";
+        $stmt = $conn->prepare($query);
+
+        // execute query
+        $stmt->execute();
+
+        // get total rows
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $total_rows = $row['total_rows'];
+
+        $page_url = "index.php?";
+        include_once "./paging.php";
+        ?>
+        <?php
+        $action = isset($_GET['action']) ? $_GET['action'] : "";
+
+        if ($action == 'deleted') {
+            echo "<div class='alert alert-success'>Record was deleted.</div>";
+        }
         ?>
     </div>
     <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
